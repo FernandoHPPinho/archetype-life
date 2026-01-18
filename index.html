@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
     <meta property="og:title" content="Archetype Alignment Assessment">
-    <meta property="og:description" content="I just discovered my true Class. Are you a Sovereign, an Architect, or an NPC? Take the test.">
-    <meta property="og:image" content="https://github.com/FernandoHPPinho/archetype-life/blob/d6a2d7e5faa6fca6b2c19161ac6fad4787f60275/social-preview.png">
+    <meta property="og:description" content="I just discovered my true Class. Are you a Sigma, a Player, or an NPC? Take the test.">
+    <meta property="og:image" content="https://fernandohppinho.github.io/archetype-life/social-preview.png">
     <meta property="og:image:type" content="image/png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -26,7 +26,6 @@
             --card: #ffffff;
             --text-main: #1a202c;
             --text-sub: #718096;
-            --accent-gold: #d69e2e;
         }
 
         body {
@@ -70,8 +69,11 @@
             font-size: 1rem;
             color: var(--text-main);
             margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
         }
-        .option-card:hover { border-color: var(--primary); background: #f7fafc; transform: translateY(-2px); }
+        .option-card:hover { border-color: var(--primary); background: #f7fafc; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .option-card:active { transform: translateY(0); }
 
         /* RESULTS UI */
         #result-section { display: none; animation: slideUp 0.6s ease-out; }
@@ -114,7 +116,7 @@
         .chart-container { position: relative; height: 400px; width: 100%; }
         
         .btn-restart {
-            background: var(--text-main);
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
             color: white;
             border: none;
             padding: 15px 40px;
@@ -124,8 +126,9 @@
             margin: 30px auto 0;
             display: block;
             transition: 0.2s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
-        .btn-restart:hover { transform: scale(1.05); background: #000; }
+        .btn-restart:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
 
         @media (max-width: 700px) {
             .hero-title { font-size: 2rem; }
@@ -147,7 +150,7 @@
             <div class="progress-text">Question <span id="q-number">1</span> of 16</div>
         </div>
         
-        <h2 id="question-text" style="font-size: 1.3rem; margin-bottom: 25px;">Loading...</h2>
+        <h2 id="question-text" style="font-size: 1.3rem; margin-bottom: 25px; transition: opacity 0.2s;">Loading...</h2>
         <div id="answers-container"></div>
     </div>
 
@@ -225,17 +228,27 @@
         }
         const q = questions[currentIdx];
         
-        document.getElementById('question-text').innerText = q.question;
+        const qText = document.getElementById('question-text');
+        qText.style.opacity = 0;
+        setTimeout(() => {
+            qText.innerText = q.question;
+            qText.style.opacity = 1;
+        }, 200);
+
         document.getElementById('q-number').innerText = currentIdx + 1;
         document.getElementById('progress-bar').style.width = `${((currentIdx) / questions.length) * 100}%`;
         
         const container = document.getElementById('answers-container');
         container.innerHTML = '';
         
-        q.answers.forEach(ans => {
+        q.answers.forEach((ans, index) => {
             const btn = document.createElement('div');
             btn.className = 'option-card';
             btn.innerText = ans.text;
+            // Add slight stagger animation
+            btn.style.animation = `slideUp 0.3s ease-out ${index * 0.05}s forwards`;
+            btn.style.opacity = '0';
+
             btn.onclick = () => {
                 totals[q.category] += ans.weight;
                 counts[q.category]++;
@@ -246,51 +259,58 @@
         });
     }
 
-    // --- COMPOSITE TITLE GENERATOR ---
+    // --- DYNAMIC 81-PROFILE GENERATOR (ORIGINAL IMAGE TERMS) ---
     function generateCompositeTitle(b, m, v, s) {
-        const avg = (b + m + v + s) / 4;
-        const scores = { "Body": b, "Mind": m, "Vocation": v, "Spirit": s };
-        
-        // Find dominant trait
-        let dominant = Object.keys(scores).reduce((a, b) => scores[a] > scores[b] ? a : b);
-        
-        // Determine Tier
-        let tier = "Low"; // Level 1
-        if (avg > 6) tier = "Mid"; // Level 2
-        if (avg > 9.5) tier = "High"; // Level 3
+        let scores = [
+            { axis: "Body", val: b }, { axis: "Mind", val: m },
+            { axis: "Vocation", val: v }, { axis: "Spirit", val: s }
+        ];
+        // Sort descending
+        scores.sort((x, y) => y.val - x.val);
 
-        // The Matrix of 15 Classes
-        const titles = {
-            "Body": {
-                "Low": { title: "The Dormant", desc: "You are disconnected from your physicality, living largely in your head or your comfort zone." },
-                "Mid": { title: "The Aesthetic", desc: "You have mastered the look of vitality, but you may still rely on external validation." },
-                "High": { title: "The Vitalist", desc: "Your body is a finely tuned instrument of will. You possess integrated strength." }
-            },
-            "Mind": {
-                "Low": { title: "The Consumer", desc: "You are largely running on scripts written by others. Time to wake up." },
-                "Mid": { title: "The Strategist", desc: "You are sharp and play the game well, but you are still playing within the box." },
-                "High": { title: "The Architect", desc: "You see the code behind the reality. You create systems rather than following them." }
-            },
-            "Vocation": {
-                "Low": { title: "The Drifter", desc: "You lack a central mission, moving through life transactionally." },
-                "Mid": { title: "The Executive", desc: "Driven by status and achievement. You are climbing the mountain, but is it the right one?" },
-                "High": { title: "The Sovereign", desc: "You have aligned your skill with your purpose. You answer to no one but your mission." }
-            },
-            "Spirit": {
-                "Low": { title: "The Skeptic", desc: "You are grounded in the material, perhaps too much. You miss the forest for the trees." },
-                "Mid": { title: "The Rationalist", desc: "You trust logic and data above all. A powerful lens, but one that filters out the unknown." },
-                "High": { title: "The Mystic", desc: "You operate on intuition and direct experience. You are comfortable in the chaos." }
-            }
+        const primary = scores[0];
+        const secondary = scores[1];
+
+        const getTier = (val) => {
+            if (val <= 5) return "Low";
+            if (val <= 9.5) return "Mid";
+            return "High";
         };
 
-        // Check for "True Balanced" (Rare)
-        if (Math.abs(b - m) < 2 && Math.abs(m - v) < 2 && Math.abs(v - s) < 2) {
-             if (tier === "Low") return { title: "The NPC", desc: "You are currently drifting. The potential is there, but the fire is not lit." };
-             if (tier === "Mid") return { title: "The Protagonist", desc: "You are the main character of a standard story. Balanced, successful, but predictable." };
-             if (tier === "High") return { title: "The Ubermensch", desc: "A rare balance of physical power, mental acuity, and spiritual depth. Human 2.0." };
+        const pTier = getTier(primary.val);
+        const sTier = getTier(secondary.val);
+
+        // Nouns (Primary Axis - The "Class")
+        const nouns = {
+            "Body": { "Low": "Incel", "Mid": "Chad", "High": "Sigma" },
+            "Mind": { "Low": "NPC", "Mid": "Player", "High": "Creator" },
+            "Vocation": { "Low": "Wage-Slave", "Mid": "Careerist", "High": "Sovereign" },
+            "Spirit": { "Low": "Believer", "Mid": "Rationalist", "High": "Mystic" }
+        };
+
+        // Adjectives (Secondary Axis - The "Modifier")
+        const adjectives = {
+            "Body": { "Low": "Dormant", "Mid": "Aesthetic", "High": "Sigma" },
+            "Mind": { "Low": "Scripted", "Mid": "Strategic", "High": "Visionary" },
+            "Vocation": { "Low": "Drifting", "Mid": "Ambitious", "High": "Aligned" },
+            "Spirit": { "Low": "Dogmatic", "Mid": "Empirical", "High": "Awakened" }
+        };
+
+        // Special Balanced Cases
+        if (Math.abs(primary.val - secondary.val) < 1 && primary.val > 10.5) {
+            return { title: "The Human 2.0", desc: "You have transcended categorization. High functioning across all domains, operating as a true outlier." };
+        }
+        if (Math.abs(primary.val - secondary.val) < 1 && primary.val < 5) {
+            return { title: "The Pure NPC", desc: "You are currently operating entirely on scripts. No dominant autonomous traits detected." };
         }
 
-        return titles[dominant][tier];
+        const adj = adjectives[secondary.axis][sTier];
+        const noun = nouns[primary.axis][pTier];
+        
+        const finalTitle = `The ${adj} ${noun}`;
+        const desc = `Your dominant trait is ${primary.axis} (${pTier} Tier), fueled by your ${secondary.axis} (${sTier} Tier). You combine the nature of the ${noun} with the quality of being ${adj}.`;
+
+        return { title: finalTitle, desc: desc };
     }
 
     function getSubLabel(category, score) {
@@ -308,13 +328,13 @@
         const vScore = totals.Vocation / counts.Vocation;
         const sScore = totals.Spirit / counts.Spirit;
 
-        // 1. Set Sub-Labels
+        // Set Sub-Labels
         document.getElementById('res-body').innerText = getSubLabel("Body", bScore);
         document.getElementById('res-mind').innerText = getSubLabel("Mind", mScore);
         document.getElementById('res-vocation').innerText = getSubLabel("Vocation", vScore);
         document.getElementById('res-spirit').innerText = getSubLabel("Spirit", sScore);
 
-        // 2. Set Composite Hero Title
+        // Set Composite Title
         const composite = generateCompositeTitle(bScore, mScore, vScore, sScore);
         document.getElementById('final-title').innerText = composite.title;
         document.getElementById('final-desc').innerText = composite.desc;
@@ -335,9 +355,10 @@
                     ctx.save(); ctx.beginPath(); ctx.arc(x, y, radius, 0, 2 * Math.PI);
                     ctx.fillStyle = color; ctx.fill(); ctx.restore();
                 }
-                drawRing(r.getDistanceFromCenterForValue(12), '#e6fffa'); 
-                drawRing(r.getDistanceFromCenterForValue(9), '#ebf8ff'); 
-                drawRing(r.getDistanceFromCenterForValue(5), '#fff5f5');
+                // Original Image Colors (Green/Blue/Red tints)
+                drawRing(r.getDistanceFromCenterForValue(12), '#e8f5e9'); 
+                drawRing(r.getDistanceFromCenterForValue(9), '#e3f2fd'); 
+                drawRing(r.getDistanceFromCenterForValue(5), '#ffebee');
             }
         };
 
